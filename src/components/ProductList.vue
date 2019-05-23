@@ -9,6 +9,8 @@
 
 <script>
 import shop from "@/api/shop";
+import store from "@/store/index";
+
 export default {
   data() {
     return {
