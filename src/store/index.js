@@ -4,7 +4,7 @@ import { getIterator } from "core-js";
 
 Vue.use(Vuex);
 
-new vue.Store({
+new Vuex.Store({
   sate: {
     // = data
     products: []
