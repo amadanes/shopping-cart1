@@ -1,6 +1,6 @@
 <template>
   <div>
-    <h1>Prtoduct List</h1>
+    <h1>Product List</h1>
     <ul>
       <li v-for="product in products">{{product.title}} - {{product.price}}</li>
     </ul>
@@ -10,19 +10,19 @@
 <script>
 import shop from "@/api/shop";
 import store from "@/store/index";
-
 export default {
-  data() {
-    return {
-      products: []
-    };
+  computed: {
+    products() {
+      return store.getters.availableProducts;
+    }
   },
-
   created() {
     shop.getProducts(products => {
-      this.products = products;
+      store.commit("setProducts", products);
     });
   }
 };
 </script>
 
+<style scoped>
+</style>

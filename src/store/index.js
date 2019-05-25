@@ -1,35 +1,32 @@
 import Vuex from "vuex";
 import Vue from "vue";
-import { getIterator } from "core-js";
 
 Vue.use(Vuex);
 
-new Vuex.Store({
-  sate: {
+export default new Vuex.Store({
+  state: {
     // = data
     products: []
   },
 
   getters: {
-    // computed properties
-    productsCount() {
-      // ...
+    // = computed properties
+    availableProducts(state, getters) {
+      return state.products.filter(product => product.inventory > 0);
     }
   },
 
-  action: {
-    // methods
+  actions: {
     fetchProducts() {
       // make the call
+      // call setProducts mutation
     }
   },
 
   mutations: {
-    // update the product
-    setProducts() {}
-  },
-
-  modules: {
-    //
+    setProducts(state, products) {
+      // update products
+      state.products = products;
+    }
   }
 });
