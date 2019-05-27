@@ -4,9 +4,11 @@
     <ul>
       <li
         v-for="product in products"
-      >{{product.title}} quantity {{product.quantity}} price {{product.price}}</li>
+      >{{product.title}} quantity {{product.quantity}} price {{product.price | currency}}</li>
     </ul>
-    <p>Total: {{total}}</p>
+    <p>Total: {{total | currency}}</p>
+    <button @click="$store.dispatch('checkout')">Checkout</button>
+    <p v-if="$store.state.checkoutStatus">{{$store.state.checkoutStatus}}</p>
   </div>
 </template>
 

@@ -1,15 +1,15 @@
 import Vuex from "vuex";
 import Vue from "vue";
 import shop from "@/api/shop";
-
 Vue.use(Vuex);
 
 export default new Vuex.Store({
   state: {
     // = data
     products: [],
-    cart: []
-    // will hold {id quantity}
+    // {id, quantity}
+    cart: [],
+    checkoutStatus: null
   },
 
   getters: {
@@ -32,19 +32,18 @@ export default new Vuex.Store({
     },
 
     cartTotal(state, getters) {
-      /*  let total = 0;
-      getters.cartProducts.forEach(Product => {
-        total += product.price * product.quantity;
-      });
-      return total; */
-      // the following can replace the entire getter
       return getters.cartProducts.reduce(
         (total, product) => total + product.price * product.quantity,
         0
       );
+    },
+
+    productIsInStock() {
+      return product => {
+        return product.inventory > 0;
+      };
     }
   },
-
   actions: {
     // = methods
     fetchProducts({ commit }) {
@@ -58,19 +57,29 @@ export default new Vuex.Store({
       });
     },
 
-    addProductToCart(context, product) {
-      if (product.inventory > 0) {
-        // find cartItem
-        const cartItem = context.state.cart.find(
-          item => item.id === product.id
-        );
+    addProductToCart({ state, getters, commit }, product) {
+      if (getters.productIsInStock(product)) {
+        const cartItem = state.cart.find(item => item.id === product.id);
         if (!cartItem) {
-          context.commit("pushProductToCart", product.id);
+          commit("pushProductToCart", product.id);
         } else {
-          context.commit("incrementItemQuantity", cartItem);
+          commit("incrementItemQuantity", cartItem);
         }
-        context.commit("decrementPeoductInventory", product);
+        commit("decrementProductInventory", product);
       }
+    },
+
+    checkout({ state, commit }) {
+      shop.buyProducts(
+        state.cart,
+        () => {
+          commit("emptyCart");
+          commit("setCheckoutStatus", "success");
+        },
+        () => {
+          commit("setCheckoutStatus", "fail");
+        }
+      );
     }
   },
 
@@ -91,8 +100,16 @@ export default new Vuex.Store({
       cartItem.quantity++;
     },
 
-    decrementPeoductInventory(state, product) {
+    decrementProductInventory(state, product) {
       product.inventory--;
+    },
+
+    setCheckoutStatus(state, status) {
+      state.checkoutStatus = status;
+    },
+
+    emptyCart(state) {
+      state.cart = [];
     }
   }
 });
