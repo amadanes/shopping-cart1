@@ -3,7 +3,7 @@
     <h1>Product List</h1>
     <img v-if="loading" src="https://i.imgur.com/JfPpwOA.gif">
     <ul v-else>
-      <li v-for="product in Products">
+      <li v-for="product in products">
         {{product.title}} - {{product.price | currency}} - {{product.inventory}}
         <button
           :disabled="!productIsInStock(product)"
@@ -15,7 +15,7 @@
 </template>
 
 <script>
-import { mapState, mapGetters } from "vuex";
+import { mapState, mapGetters, mapActions } from "vuex";
 export default {
   data() {
     return {
@@ -25,7 +25,7 @@ export default {
 
   computed: {
     ...mapState({
-      Products: state => state.products
+      products: state => state.products
     }),
 
     ...mapGetters({
@@ -34,13 +34,14 @@ export default {
   },
 
   methods: {
-    addProductToCart(product) {
-      this.$store.dispatch("addProductToCart", product);
-    }
+    ...mapActions({
+      fetchProducts: "fetchProducts",
+      addProductToCart: "addProductToCart"
+    })
   },
   created() {
     this.loading = true;
-    this.$store.dispatch("fetchProducts").then(() => (this.loading = false));
+    this.fetchProducts().then(() => (this.loading = false));
   }
 };
 </script>
