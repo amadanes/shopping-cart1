@@ -2,12 +2,12 @@ import shop from "@/api/shop";
 
 export default {
   state: {
-    products: []
+    items: []
   },
 
   getters: {
     availableProducts(state, getters) {
-      return state.products.filter(product => product.inventory > 0);
+      return state.items.filter(product => product.inventory > 0);
     },
 
     productIsInStock() {
@@ -20,7 +20,7 @@ export default {
   mutations: {
     setProducts(state, products) {
       // update products
-      state.products = products;
+      state.items = products;
     },
 
     decrementProductInventory(state, product) {
