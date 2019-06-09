@@ -1,0 +1,295 @@
+PorductList.vue
+
+<template>
+    <div>
+      <h1>Product List</h1>
+      <img
+        v-if="loading"
+        src="https://i.imgur.com/JfPpwOA.gif"
+      >
+      <ul v-else>
+        <li v-for="product in products">
+          {{product.title}} - {{product.price | currency}} - {{product.inventory}}
+          <button
+            :disabled="!productIsInStock(product)"
+            @click="addProductToCart(product)"
+          >Add to cart</button>
+        </li>
+      </ul>
+    </div>
+</template>
+
+<script>
+  import {mapState, mapGetters, mapActions} from 'vuex'
+  export default {
+    data () {
+      return {
+        loading: false,
+        productIndex: 1
+      }
+    },
+    computed: {
+      ...mapState({
+        products: state => state.products.items
+      }),
+      ...mapGetters({
+        productIsInStock: 'productIsInStock'
+      })
+    },
+    methods: {
+      ...mapActions({
+        fetchProducts: 'fetchProducts',
+        addProductToCart: 'addProductToCart'
+      })
+    },
+    created () {
+      this.loading = true
+      this.fetchProducts()
+        .then(() => this.loading = false)
+    }
+  }
+</script>
+
+<style scoped>
+</style>
+
+ShoppingCart.Vue
+
+<template>
+    <div>
+      <h1>Shopping Cart</h1>
+      <ul>
+        <li v-for="product in products">
+          {{product.title}} - {{product.price | currency}} - {{product.quantity}}
+        </li>
+      </ul>
+      <p>Total: {{total | currency}}</p>
+      <button @click="checkout">Checkout</button>
+      <p v-if="checkoutStatus">{{checkoutStatus}}</p>
+    </div>
+</template>
+
+<script>
+  import {mapState, mapGetters, mapActions} from 'vuex'
+  export default {
+    computed: {
+      ...mapGetters({
+        products: 'cartProducts',
+        total: 'cartTotal'
+      }),
+      ...mapState({
+        checkoutStatus: state => state.cart.checkoutStatus
+      })
+    },
+    methods: {
+      ...mapActions(['checkout'])
+    }
+  }
+</script>
+
+<style scoped>
+</style>
+
+actions.js
+
+import shop from "@/api/shop";
+
+export default { // = methods
+
+}
+
+index.js
+
+import Vuex from 'vuex'
+import Vue from 'vue'
+import actions from './actions'
+import cart from './modules/cart'
+import products from './modules/products'
+
+
+Vue.use(Vuex)
+
+export default new Vuex.Store({
+  modules: {
+    cart,
+    products
+  },
+
+  state: { // = data
+
+  },
+
+  getters: { // = computed properties
+
+  },
+
+  actions,
+
+  mutations: {
+
+  }
+})
+
+cart.js
+
+
+import shop from "@/api/shop";
+
+export default {
+  state: {
+    // {id, quantity}
+    items: [],
+    checkoutStatus: null
+  },
+
+  getters: {
+    cartProducts (state, getters, rootState) {
+      return state.items.map(cartItem => {
+        const product = rootState.products.items.find(product => product.id === cartItem.id)
+        return {
+          title: product.title,
+          price: product.price,
+          quantity: cartItem.quantity
+        }
+      })
+    },
+
+    cartTotal (state, getters) {
+      return getters.cartProducts.reduce((total, product) => total + product.price * product.quantity, 0)
+    },
+  },
+
+  mutations: {
+    pushProductToCart (state, productId) {
+      state.items.push({
+        id: productId,
+        quantity: 1
+      })
+    },
+
+    incrementItemQuantity (state, cartItem) {
+      cartItem.quantity++
+    },
+
+    setCheckoutStatus (state, status) {
+      state.checkoutStatus = status
+    },
+
+    emptyCart (state) {
+      state.items = []
+    }
+  },
+
+  actions: {
+    addProductToCart({state, getters, commit, rootState}, product) {
+      if (getters.productIsInStock(product)) {
+        const cartItem = state.items.find(item => item.id === product.id)
+        if (!cartItem) {
+          commit('pushProductToCart', product.id)
+        } else {
+          commit('incrementItemQuantity', cartItem)
+        }
+        commit('decrementProductInventory', product)
+      }
+    },
+
+    checkout({state, commit}) {
+      shop.buyProducts(
+        state.items,
+        () => {
+          commit('emptyCart')
+          commit('setCheckoutStatus', 'success')
+        },
+        () => {
+          commit('setCheckoutStatus', 'fail')
+        }
+      )
+    }
+  }
+}
+© 2019 GitHub, Inc.
+
+products.js
+
+import shop from "@/api/shop";
+
+export default {
+  state: {
+    items: []
+  },
+
+  getters: {
+    availableProducts (state, getters) {
+      return state.items.filter(product => product.inventory > 0)
+    },
+
+    productIsInStock () {
+      return (product) => {
+        return product.inventory > 0
+      }
+    }
+  },
+
+  mutations: {
+    setProducts (state, products) {
+      // update products
+      state.items = products
+    },
+
+    decrementProductInventory (state, product) {
+      product.inventory--
+    }
+  },
+
+  actions: {
+    fetchProducts({commit}) {
+      return new Promise((resolve, reject) => {
+        // make the call
+        // call setProducts mutation
+        shop.getProducts(products => {
+          commit('setProducts', products)
+          resolve()
+        })
+      })
+    }
+  }
+}
+© 2019 GitHub, Inc.
+
+shoppingCart.vue
+
+<template>
+    <div>
+      <h1>Shopping Cart</h1>
+      <ul>
+        <li v-for="product in products">
+          {{product.title}} - {{product.price | currency}} - {{product.quantity}}
+        </li>
+      </ul>
+      <p>Total: {{total | currency}}</p>
+      <button @click="checkout">Checkout</button>
+      <p v-if="checkoutStatus">{{checkoutStatus}}</p>
+    </div>
+</template>
+
+<script>
+  import {mapState, mapGetters, mapActions} from 'vuex'
+  export default {
+    computed: {
+      ...mapGetters({
+        products: 'cartProducts',
+        total: 'cartTotal'
+      }),
+      ...mapState({
+        checkoutStatus: state => state.cart.checkoutStatus
+      })
+    },
+    methods: {
+      ...mapActions(['checkout'])
+    }
+  }
+</script>
+
+<style scoped>
+</style>
+© 2019 GitHub, Inc.
